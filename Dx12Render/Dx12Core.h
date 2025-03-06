@@ -10,6 +10,11 @@ using Microsoft::WRL::ComPtr;
 #include <dxgi1_6.h>
 #include <d3dcompiler.h>
 
+#pragma comment (lib, "DXGI.lib")
+#pragma comment (lib, "D3D12.lib")
+
+
+
 namespace FDX
 {
 	class DxCoreBase;
@@ -47,12 +52,12 @@ namespace FDX
 		UINT _frameIndex;
 	protected:
 	public:
-		virtual void OnInit();
+		virtual HRESULT OnInit();
 	private:
 		/// <summary>
 		/// 初始化device，Dx9只有Device，Dx11和Dx12多少有改變如SwapChain等，統一叫Device
 		/// </summary>
-		void InitDevice();
+		HRESULT InitDevice();
 
 		void GetHardwareAdapter(
 			_In_ IDXGIFactory1* pFactory,

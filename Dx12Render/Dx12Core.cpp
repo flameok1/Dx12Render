@@ -12,9 +12,8 @@ namespace FDX
 
     }
 
-	void Dx12Core::InitDevice()
+    HRESULT Dx12Core::InitDevice()
 	{
-        _init = false;
         UINT dxgiFactoryFlags = 0;
         
 #if defined(_DEBUG)
@@ -33,28 +32,29 @@ namespace FDX
 #endif
         
         ComPtr<IDXGIFactory4> factory;
-        if (FAILED( CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&factory))) )
+        HRESULT hr;
+        if (FAILED(hr = CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&factory))) )
         {
-            return;
+            return hr;
         }
 
         if (_useWarpDevice)
         {
             ComPtr<IDXGIAdapter> warpAdapter;
-            if (FAILED(factory->EnumWarpAdapter(IID_PPV_ARGS(&warpAdapter))))
+            if (FAILED(hr = factory->EnumWarpAdapter(IID_PPV_ARGS(&warpAdapter))))
             {
-                return;
+                return hr;
             }
 
             //建device呼叫，各版本都很像
-            if (FAILED(D3D12CreateDevice(
+            if (FAILED(hr = D3D12CreateDevice(
                                         warpAdapter.Get(),
                                         D3D_FEATURE_LEVEL_11_0,
                                         IID_PPV_ARGS(&_device)
                                     ))
                 )
             {
-                return;
+                return hr;
             }
         }
         else
@@ -62,13 +62,13 @@ namespace FDX
             ComPtr<IDXGIAdapter1> hardwareAdapter;
             GetHardwareAdapter(factory.Get(), &hardwareAdapter);
 
-            if (FAILED(D3D12CreateDevice(
+            if (FAILED(hr = D3D12CreateDevice(
                 hardwareAdapter.Get(),
                 D3D_FEATURE_LEVEL_11_0,
                 IID_PPV_ARGS(&_device)
             )))
             {
-                return;
+                return hr;
             }
         }
 
@@ -78,9 +78,9 @@ namespace FDX
         queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
         queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
-        if( FAILED(_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&_commandQueue))) )
+        if( FAILED(hr = _device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&_commandQueue))) )
         {
-            return;
+            return hr;
         }
 
         // swap chain基本就是back buff吧...dx11就出現了，dx10沒用過不知道...dx9沒有
@@ -94,7 +94,7 @@ namespace FDX
         swapChainDesc.SampleDesc.Count = 1;
 
         ComPtr<IDXGISwapChain1> swapChain;
-        if (FAILED(factory->CreateSwapChainForHwnd(
+        if (FAILED(hr = factory->CreateSwapChainForHwnd(
             _commandQueue.Get(),
             _hWnd,
             &swapChainDesc,
@@ -103,20 +103,20 @@ namespace FDX
             &swapChain
         )))
         {
-            return;
+            return hr;
         }
 
         
         // alt+enter是切換全螢幕的快速鍵，停止對應
-        if (FAILED(factory->MakeWindowAssociation(_hWnd, DXGI_MWA_NO_ALT_ENTER)))
+        if (FAILED(hr = factory->MakeWindowAssociation(_hWnd, DXGI_MWA_NO_ALT_ENTER)))
         {
-            return;
+            return hr;
         }
         
         //嘗試轉換IDXGISwapChain1和IDXGISwapChain3等等是繼承關係
-        if (FAILED(swapChain.As(&_swapChain)))
+        if (FAILED(hr = swapChain.As(&_swapChain)))
         {
-            return;
+            return hr;
         }
 
         _frameIndex = _swapChain->GetCurrentBackBufferIndex();
@@ -129,9 +129,9 @@ namespace FDX
             rtvHeapDesc.NumDescriptors = FrameCount;
             rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
             rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-            if (FAILED(_device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&_rtvHeap))))
+            if (FAILED(hr = _device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&_rtvHeap))))
             {
-                return;
+                return hr;
             }
 
             _rtvDescriptorSize = _device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -144,9 +144,9 @@ namespace FDX
             // Create a RTV for each frame.
             for (UINT n = 0; n < FrameCount; n++)
             {
-                if (FAILED(_swapChain->GetBuffer(n, IID_PPV_ARGS(&_renderTargets[n]))))
+                if (FAILED(hr = _swapChain->GetBuffer(n, IID_PPV_ARGS(&_renderTargets[n]))))
                 {
-                    return;
+                    return hr;
                 }
 
                 _device->CreateRenderTargetView(_renderTargets[n].Get(), nullptr, rtvHandle); //應該類似dx11的ClearRenderTargetView?
@@ -154,19 +154,25 @@ namespace FDX
             }
         }
         
-        if (FAILED(_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&_commandAllocator))))
+        if (FAILED(hr = _device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&_commandAllocator))))
         {
-            return;
+            return hr;
         }
         
 
-        _init = true;
+        return S_OK;
 	}
 
 
-	void Dx12Core::OnInit()
+    HRESULT Dx12Core::OnInit()
 	{
-		InitDevice();
+        HRESULT hr;
+        if (FAILED(hr = InitDevice()) )
+        {
+            return hr;
+        }
+
+        return S_OK;
 	}
 
 

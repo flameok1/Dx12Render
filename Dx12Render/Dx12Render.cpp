@@ -31,5 +31,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     FDX::Dx12Core dxcore(800, 600, L"GG", app.GetWnd());
 
+    HRESULT hr = dxcore.OnInit();
+
+    if (FAILED(hr))
+    {
+        exit(-1);
+    }
+
     return app.UpdateLoop();
 }

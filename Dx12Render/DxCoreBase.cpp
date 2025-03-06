@@ -4,7 +4,6 @@
 namespace FDX
 {
 	DxCoreBase::DxCoreBase(UINT width, UINT height, std::wstring name, HWND wnd) :
-		_init(false),
 		_width(width),
 		_height(height),
 		_title(name),

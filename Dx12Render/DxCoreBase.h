@@ -19,8 +19,6 @@ namespace FDX
 		std::wstring _title;
 
     protected:
-		//init end
-		bool _init;
 
         //解析度參數
 		UINT _width;
@@ -32,7 +30,7 @@ namespace FDX
         bool _useWarpDevice;
 
 	public:
-		virtual void OnInit() = 0;
+		virtual HRESULT OnInit() = 0;
 	};
 
 }
